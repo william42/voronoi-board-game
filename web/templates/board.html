@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<head>
+    <title>Voronova!</title>
+</head>
+<body>
+    <h1>Voronova board {{board_name}}</h1>
+
+    <div style="height: 500px; width: 500px;">
+        <svg viewBox="0 0 44 44">
+            {% for edge in edges %}
+                <line
+                x1={{edge.x1}}
+                y1={{edge.y1}}
+                x2={{edge.x2}}
+                y2={{edge.y2}}
+                stroke="black"
+                stroke-width="0.5%"
+                ></line>
+            {% endfor %}
+            {% for cell in cells %}
+                <circle
+                id="cell-{{ cell.num }}"
+                class="voro-cell"
+                cx="{{cell.x}}"
+                cy="{{cell.y}}"
+                r="{{radius}}"
+                fill-opacity="0">
+                    <title>Cell {{ cell.num }}</title>
+                </circle>
+            {% endfor %}
+        </svg>
+    </div>
+
+    <div>
+        <form action="/games/new" method="POST">
+            <input type="text" name="game_name">
+            <input type="hidden" name="board_id" value="{{board_id}}">
+            <input type="submit" value="New Game">
+        </form>
+    </div>
+
+    <script type="text/javascript">
+        var cells = document.getElementsByClassName('voro-cell');
+        for (var cell of cells) {
+            cell.addEventListener('click', function() {
+                console.log('click!');
+                this.setAttributeNS(null, 'fill-opacity',1);
+                this.classList.add('voro-cell-clicked');
+            });
+            cell.addEventListener('mouseenter', function() {
+                if (this.classList.contains('voro-cell-clicked')) {
+                    return;
+                }
+                this.setAttributeNS(null, 'fill-opacity',0.3);
+            });
+            cell.addEventListener('mouseleave', function () {
+                if (this.classList.contains('voro-cell-clicked')) {
+                    return;
+                }
+                this.setAttributeNS(null, 'fill-opacity',0);
+            });
+        }
+    </script>
+</body>

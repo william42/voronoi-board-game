@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<head>
+    <title>Voronova!</title>
+</head>
+<body>
+    <h1>Voronova game {{game_name}}</h1>
+
+    <div style="height: 500px; width: 500px;">
+        <svg viewBox="0 0 44 44">
+            {% for edge in edges %}
+                <line
+                x1={{edge.x1}}
+                y1={{edge.y1}}
+                x2={{edge.x2}}
+                y2={{edge.y2}}
+                stroke="black"
+                stroke-width="0.5%"
+                ></line>
+            {% endfor %}
+            {% for cell in cells %}
+                <circle
+                id="cell-{{ cell.num }}"
+                data-num="{{ cell.num }}"
+                cx="{{cell.x}}"
+                cy="{{cell.y}}"
+                r="{{radius}}"
+                {% if cell.color is defined %}
+                    class="voro-cell voro-cell-clicked"
+                    {% if cell.color == 1 %}
+                        fill="red"
+                    {% else %}
+                        fill="blue"
+                    {% endif %}
+                {% else %}
+                fill-opacity="0"
+                class="voro-cell"
+                {% endif %}>
+                    <title>Cell {{ cell.num }}</title>
+                </circle>
+            {% endfor %}
+        </svg>
+    </div>
+
+    <div>
+        <select name="color" id="color">
+            <option value="1">Red</option>
+            <option value="2">Blue</option>
+        </select>
+    </div>
+
+    <script type="text/javascript">
+        var protocol = location.protocol == 'http:' ? 'ws:' : 'wss:';
+        var sock = new WebSocket(protocol + location.host + location.pathname);
+        sock.onmessage = function(event) {
+            data = JSON.parse(event.data);
+            console.log(data)
+            if (data.action === 'PLAY_TOKEN') {
+                var token_id = data.location;
+                var cell = document.getElementById('cell-' + token_id);
+                var color = data.color === 1 ? 'red' : 'blue';
+                cell.setAttributeNS(null, 'fill-opacity', 1);
+                cell.setAttributeNS(null, 'fill', color);
+                cell.classList.add('voro-cell-clicked');
+            }
+        };
+        function send_json(message) {
+            raw_message = JSON.stringify(message);
+            sock.send(raw_message);
+        }
+        var cells = document.getElementsByClassName('voro-cell');
+        for (var cell of cells) {
+            cell.addEventListener('click', function() {
+                var color_select = document.getElementById("color");
+                var color = color_select.options[color_select.selectedIndex].value;
+                send_json({
+                    action: 'PLAY_TOKEN',
+                    location: this.dataset.num,
+                    color: color,
+                });
+                console.log(this)
+            });
+            cell.addEventListener('mouseenter', function() {
+                if (this.classList.contains('voro-cell-clicked')) {
+                    return;
+                }
+                this.setAttributeNS(null, 'fill-opacity', 0.3);
+            });
+            cell.addEventListener('mouseleave', function () {
+                if (this.classList.contains('voro-cell-clicked')) {
+                    return;
+                }
+                this.setAttributeNS(null, 'fill-opacity', 0);
+            });
+        }
+        
+    </script>
+</body>

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<head>
+    <title>Voronova!</title>
+</head>
+<body>
+    <h1>Voronova boards:</h1>
+    <ul>
+        {% for board in boards %}
+            <li>
+                <a href="/boards/{{ board.board_id }}">{{ board.board_name }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
