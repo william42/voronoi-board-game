@@ -174,8 +174,9 @@ def game_socket(ws, id):
         
 
 @app.cli.command('runws')
-def run_ws():
+@click.option('--port', default=5000, help='Port to run websocket/HTTP server on.')
+def run_ws(port):
     from gevent import pywsgi
     from geventwebsocket.handler import WebSocketHandler
-    server = pywsgi.WSGIServer(('', 5000), app, handler_class=WebSocketHandler)
+    server = pywsgi.WSGIServer(('', port), app, handler_class=WebSocketHandler)
     server.serve_forever()
