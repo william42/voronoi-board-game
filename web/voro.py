@@ -34,7 +34,7 @@ def init_db():
     with app.open_resource('schema.sql', mode='r') as f:
         db.cursor().executescript(f.read())
     db.commit()
-    print('Database initialized.')
+    app.logger.info('Database initialized.')
 
 @app.cli.command('addboard')
 @click.argument('filename')
@@ -46,7 +46,7 @@ def add_board(filename):
         (board_name, board_json)
         VALUES (?,?)""", [filename, json.dumps(board)])
     db.commit()
-    print("Board added!")
+    app.logger.info("Board added!")
 
 def layout_board(id):
     db = get_db()
@@ -161,16 +161,24 @@ def game_socket(ws, id):
     server = ws.handler.server
     client = server.clients[client_address]
     client.game_id = id
+    app.logger.info('Opening socket at %s for game %d', client_address, id)
     while not ws.closed:
-        raw_message = ws.receive()
-        print(raw_message)
-        message = json.loads(raw_message)
-        if message['action'] == 'PLAY_TOKEN':
-            location = int(message['location'])
-            color = int(message['color'])
-            play_token(ws, id, location, color)
-        else:
-            print('Unknown message!')
+        try:
+            raw_message = ws.receive()
+            if raw_message is None:
+                app.logger.info('None message received and ignored...')
+                continue
+            message = json.loads(raw_message)
+            if message['action'] == 'PLAY_TOKEN':
+                location = int(message['location'])
+                color = int(message['color'])
+                play_token(ws, id, location, color)
+            else:
+                app.logger.warning('Unknown message %s', message)
+        except Exception as e:
+            app.logger.warning('Error: %s', e)
+            app.logger.warning('Raw message was: %s', raw_message)
+    app.logger.info('Closing socket...')
         
 
 @app.cli.command('runws')
@@ -178,5 +186,6 @@ def game_socket(ws, id):
 def run_ws(port):
     from gevent import pywsgi
     from geventwebsocket.handler import WebSocketHandler
+    app.logger.setLevel('INFO')
     server = pywsgi.WSGIServer(('', port), app, handler_class=WebSocketHandler)
     server.serve_forever()
