@@ -1,6 +1,23 @@
 <!DOCTYPE html>
 <head>
     <title>Voronova!</title>
+    <style>
+        circle.voro-cell {
+            fill-opacity: 0;
+        }
+        circle.voro-cell:hover {
+            fill-opacity: 0.3;
+        }
+        circle.voro-cell.voro-cell-clicked {
+            fill-opacity: 1;
+        }
+        circle.voro-token-1 {
+            fill: red;
+        }
+        circle.voro-token-2 {
+            fill: blue;
+        }
+    </style>
 </head>
 <body>
     <h1>Voronova game {{game_name}}</h1>
@@ -25,14 +42,8 @@
                 cy="{{cell.y}}"
                 r="{{radius}}"
                 {% if cell.color is defined %}
-                    class="voro-cell voro-cell-clicked"
-                    {% if cell.color == 1 %}
-                        fill="red"
-                    {% else %}
-                        fill="blue"
-                    {% endif %}
+                    class="voro-cell voro-cell-clicked voro-token-{{ cell.color }}"
                 {% else %}
-                fill-opacity="0"
                 class="voro-cell"
                 {% endif %}>
                     <title>Cell {{ cell.num }}</title>
@@ -57,9 +68,7 @@
             if (data.action === 'PLAY_TOKEN') {
                 var token_id = data.location;
                 var cell = document.getElementById('cell-' + token_id);
-                var color = data.color === 1 ? 'red' : 'blue';
-                cell.setAttributeNS(null, 'fill-opacity', 1);
-                cell.setAttributeNS(null, 'fill', color);
+                cell.classList.add('voro-token-' + data.color)
                 cell.classList.add('voro-cell-clicked');
             }
         };
@@ -78,18 +87,6 @@
                     color: color,
                 });
                 console.log(this)
-            });
-            cell.addEventListener('mouseenter', function() {
-                if (this.classList.contains('voro-cell-clicked')) {
-                    return;
-                }
-                this.setAttributeNS(null, 'fill-opacity', 0.3);
-            });
-            cell.addEventListener('mouseleave', function () {
-                if (this.classList.contains('voro-cell-clicked')) {
-                    return;
-                }
-                this.setAttributeNS(null, 'fill-opacity', 0);
             });
         }
         
