@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import click
 import numpy as np
 import scipy.spatial as sp
 import math
@@ -65,29 +66,25 @@ def voroboard(n_i, n_b, ic):
 def circle(n):
     return np.array([[math.cos(2*math.pi*i/n), math.sin(2*math.pi*i/n)] for i in range(n)])
 
+@click.command()
+@click.option('--border', type=int, default=51, help='Number of tokens to have on the border of the board.')
+@click.option('--interior', type=int, default=310, help='Number of tokens to have in the interior of the board.')
+@click.argument('output', type=click.File('w'))
+def build_board(border, interior, output):
+    board = voroboard(interior, border, 800)
+    trueboard = np.concatenate([circle(border) * 20, board])
+    delb = sp.Delaunay(trueboard)
 
-n = 51
-board = voroboard(310, n, 800)
-trueboard = np.concatenate([circle(n) * 20, board])
-delb = sp.Delaunay(trueboard)
-
-ptr, indices = delb.vertex_neighbor_vertices
-edges = {(int(i), int(j)) for i in range(len(trueboard))
-         for j in indices[ptr[i]:ptr[i+1]]
-         if i < j}
-
-now = datetime.datetime.now()
-filename_base = 'board-alpha-{}-{}-{}-{}-{}-{}'.format(
-    now.year,
-    now.month,
-    now.day,
-    now.hour,
-    now.minute,
-    now.second
-)
-with open(filename_base+'.json', 'w') as f:
+    ptr, indices = delb.vertex_neighbor_vertices
+    edges = {(int(i), int(j)) for i in range(len(trueboard))
+            for j in indices[ptr[i]:ptr[i+1]]
+            if i < j}
+    
     res = {
         'tokens': trueboard.tolist(),
         'edges': list(edges),
     }
-    json.dump(res, f)
+    json.dump(res, output)
+
+if __name__ == "__main__":
+    build_board() # pylint: disable=no-value-for-parameter
