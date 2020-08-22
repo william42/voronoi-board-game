@@ -3,7 +3,16 @@
     <title>Voronova!</title>
 </head>
 <body>
-    <h1>Voronova boards:</h1>
+    <h1>Voronova!</h1>
+    <h2>Voronova games:</h2>
+    <ul>
+        {% for game in games %}
+            <li>
+                <a href="/games/{{ game.game_id }}">{{ game.game_name }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+    <h2>Voronova boards:</h2>
     <ul>
         {% for board in boards %}
             <li>

@@ -130,10 +130,11 @@ def view_game(id):
 @app.route('/')
 def home():
     db = get_db()
-    cursor = db.execute("""SELECT board_id, board_name
-        FROM boards""")
-    boards = cursor.fetchall()
-    return render_template('board_list.html', boards=boards)
+    boards = db.execute("""SELECT board_id, board_name
+        FROM boards""").fetchall()
+    games = db.execute("""SELECT game_id, game_name
+        FROM games""").fetchall()
+    return render_template('board_list.html', boards=boards, games=games)
 
 def broadcast(ws, game_id, message):
     # TODO: understand this, maybe use something less hacky?
