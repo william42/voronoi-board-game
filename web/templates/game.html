@@ -60,6 +60,7 @@
     </div>
 
     <script type="text/javascript">
+        var game_status = {{ game_status_json|safe }};
         var protocol = location.protocol == 'http:' ? 'ws:' : 'wss:';
         var sock = new WebSocket(protocol + location.host + location.pathname);
         sock.onmessage = function(event) {
@@ -70,6 +71,10 @@
                 var cell = document.getElementById('cell-' + token_id);
                 cell.classList.add('voro-token-' + data.color)
                 cell.classList.add('voro-cell-clicked');
+            }
+            if (data.action === 'NEW_GAME_STATUS') {
+                game_status = data.status;
+                //TODO: interface to show game status
             }
         };
         function send_json(message) {
