@@ -2,7 +2,7 @@
 
 This repository consists of the code for a Flask app running a game based on Ea Ea's game *Star, as well as a builder for game boards, based on the Centroidal Voronoi Tesselation.
 
-This is not an official Google project.
+This is not an officially supported Google project.
 
 ## How to use
 
