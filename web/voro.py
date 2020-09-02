@@ -54,14 +54,16 @@ def init_db():
     app.logger.info('Database initialized.')
 
 @app.cli.command('addboard')
-@click.argument('filename')
-def add_board(filename):
-    with open(filename, 'r') as f:
-        board = json.load(f)
+@click.option('--name', type=str, default=None, help='Name to give the board')
+@click.argument('file', type=click.File('r'))
+def add_board(name, file):
+    board = json.load(file)
+    if name is None:
+        name = file.name
     db = get_db()
     db.execute("""INSERT INTO boards
         (board_name, board_json)
-        VALUES (?,?)""", [filename, json.dumps(board)])
+        VALUES (?,?)""", [name, json.dumps(board)])
     db.commit()
     app.logger.info("Board added!")
 
