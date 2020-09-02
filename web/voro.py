@@ -183,6 +183,35 @@ def broadcast(ws, game_id, message):
         if client.game_id != game_id: continue
         client.ws.send(json.dumps(message))
 
+def check_game(game_id, game_status):
+    db = get_db()
+
+    cur = db.execute("""SELECT b.board_json
+        FROM boards AS b
+        JOIN games AS g
+            ON b.board_id = g.board_id
+        WHERE g.game_id=?""", (game_id,))
+    board_info = cur.fetchone()
+    board = json.loads(board_info['board_json'])
+
+    num_cells = len(board['tokens'])
+    edges = board['edges']
+    num_border = board['num_border']
+
+    cells = [None for i in range(num_cells)]
+    cur = db.execute("""SELECT location, player
+        FROM tokens
+        WHERE game_id=?""", (game_id,))
+    for row in cur:
+        cells[row['location']] = row['player']
+    
+    for i in range(num_border):
+        if cells[i] is None:
+            app.logger.info('Border not full')
+            # TODO: mention this in game_status?
+            return
+    app.logger.info('Border full.  TODO: check game state')
+
 def play_token(ws, game_id, location, color):
     game_status = get_game_status(game_id)
     if game_status['to_move'] != color:
@@ -195,6 +224,7 @@ def play_token(ws, game_id, location, color):
     db.execute("""INSERT INTO tokens
         (game_id, player, location)
         VALUES (?,?,?)""", (game_id, color, location))
+    check_game(game_id, game_status)
     set_game_status(game_id, game_status, False)
     db.commit()
     message = {
