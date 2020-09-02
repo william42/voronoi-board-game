@@ -83,6 +83,7 @@ def build_board(border, interior, output):
     res = {
         'tokens': trueboard.tolist(),
         'edges': list(edges),
+        'num_border': border,
     }
     json.dump(res, output)
 
