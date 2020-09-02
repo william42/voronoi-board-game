@@ -21,6 +21,7 @@ import numpy as np
 import io
 import json
 import os
+from unionfind import UnionFind
 
 #getting a lot of false positives on app.logger
 #pylint: disable=no-member
@@ -208,9 +209,29 @@ def check_game(game_id, game_status):
     for i in range(num_border):
         if cells[i] is None:
             app.logger.info('Border not full')
-            # TODO: mention this in game_status?
+            game_status['border_full'] = False
             return
-    app.logger.info('Border full.  TODO: check game state')
+    app.logger.info('Border full.')
+    game_status['border_full'] = True
+    uf = UnionFind(num_cells)
+    for i in range(num_border):
+        uf.custom_weights[i]=1
+    for (i,j) in edges:
+        if i>=num_border or j>=num_border:
+            continue
+        if cells[i] != cells[j]:
+            continue
+        uf.merge(i,j)
+    app.logger.info('Relevant groups 1: %s', uf.positive_weight_groups())
+    num_outer_groups = len(uf.positive_weight_groups()) / 2
+    for (i,j) in edges:
+        if cells[i] != cells[j] or cells[i] is None:
+            continue
+        uf.merge(i,j)
+    app.logger.info('Relevant groups 2: %s', uf.positive_weight_groups())
+    #TODO: use this to get game completion and scoring conditions
+
+    
 
 def play_token(ws, game_id, location, color):
     game_status = get_game_status(game_id)
