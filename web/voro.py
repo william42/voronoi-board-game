@@ -148,7 +148,6 @@ def new_game():
 
 @app.route('/games/<int:id>')
 def view_game(id):
-    #TODO: everything
     db = get_db()
     cur = db.execute("""SELECT game_name, board_id, game_status_json
         FROM games
@@ -222,14 +221,25 @@ def check_game(game_id, game_status):
         if cells[i] != cells[j]:
             continue
         uf.merge(i,j)
-    app.logger.info('Relevant groups 1: %s', uf.positive_weight_groups())
     num_outer_groups = len(uf.positive_weight_groups()) / 2
     for (i,j) in edges:
         if cells[i] != cells[j] or cells[i] is None:
             continue
         uf.merge(i,j)
-    app.logger.info('Relevant groups 2: %s', uf.positive_weight_groups())
-    #TODO: use this to get game completion and scoring conditions
+    remaining_connections = len(uf.positive_weight_groups()) - num_outer_groups - 1
+    game_status['connections_remaining'] = remaining_connections
+    if remaining_connections > 0:
+        return
+    game_status['game_complete'] = True
+    scores = [0, 0]
+    for cell, weight in uf.positive_weight_groups():
+        player = 0 if cells[cell] == 1 else 1
+        if weight > 1:
+            scores[player] += weight - 4
+        else:
+            scores[1 - player] += 1
+    game_status['score_1'], game_status['score_2'] = scores
+    app.logger.info('Score: %s', scores)
 
     
 

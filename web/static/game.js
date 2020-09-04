@@ -35,6 +35,18 @@ function set_status(new_status) {
     if ('moves_left' in new_status) {
         document.getElementById('moves-left-counter').textContent = new_status.moves_left;
     }
+    if ('connections_remaining' in new_status) {
+        status_holder.classList.add('voro-border-filled');
+        document.getElementById('connections-remaining-counter').textContent = new_status.connections_remaining;
+    } else {
+        status_holder.classList.remove('voro-border-filled');
+    }
+    if ('game_complete' in new_status && new_status.game_complete) {
+        status_holder.classList.add('voro-game-complete');
+        document.getElementById('score-holder').classList.add('voro-game-complete');
+        document.getElementById('score-1-counter').textContent = new_status.score_1;
+        document.getElementById('score-2-counter').textContent = new_status.score_2;
+    }
     game_status = new_status;
 }
 

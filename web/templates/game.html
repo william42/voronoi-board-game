@@ -37,9 +37,19 @@
     </div>
 
     <div id="status-holder">
-        <span class="voro-to-move-1">Red to move.</span>
-        <span class="voro-to-move-2">Blue to move.</span>
-        <span><span id="moves-left-counter"></span> move(s) left.</span>
+        <div>
+            <span class="voro-to-move-1">Red to move.</span>
+            <span class="voro-to-move-2">Blue to move.</span>
+            <span><span id="moves-left-counter"></span> move(s) left.</span>
+        </div>
+        <div>
+            <span class="voro-border-filled">
+                Border filled. <span id="connections-remaining-counter"></span> connection(s) left.
+            </span>
+        </div>
+    </div>
+    <div id="score-holder">
+        Final score: Red <span id="score-1-counter"></span>, Blue <span id="score-2-counter"></span>
     </div>
 
     <script src="/static/game.js"></script>

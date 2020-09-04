@@ -45,3 +45,15 @@ circle.voro-token-2 {
 #status-holder:not(.voro-holder-2) .voro-to-move-2{
     display: none;
 }
+
+#status-holder:not(.voro-border-filled) .voro-border-filled {
+    display: none;
+}
+
+#status-holder.voro-game-complete {
+    display: none;
+}
+
+#score-holder:not(.voro-game-complete) {
+    display: none;
+}
