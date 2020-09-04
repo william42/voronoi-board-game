@@ -31,5 +31,5 @@ flask runws # Runs the WebSocket and HTTP server.
 This is very much a work-in-progress.  In particular:
 
 * There's no login/account system.
-* The actual rules of the game to decide who wins haven't been implemented yet.
+* The rules are unexplained.
 * The protocol is incredibly flimsy.
