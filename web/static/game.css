@@ -57,3 +57,11 @@ circle.voro-token-2 {
 #score-holder:not(.voro-game-complete) {
     display: none;
 }
+
+#websocket-closed.voro-hide {
+    display: none;
+}
+
+#websocket-closed {
+    color: red;
+}

@@ -65,6 +65,10 @@ sock.onmessage = function(event) {
     }
 };
 
+sock.onclose = function(event) {
+    document.getElementById('websocket-closed').classList.remove('voro-hide');
+}
+
 function send_json(message) {
     raw_message = JSON.stringify(message);
     sock.send(raw_message);
