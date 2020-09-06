@@ -244,14 +244,19 @@ def check_game(game_id, game_status):
     
 
 def play_token(ws, game_id, location, color):
+    db = get_db()
     game_status = get_game_status(game_id)
     if game_status['to_move'] != color:
+        return
+    cur = db.execute("""SELECT 1 FROM tokens
+        WHERE game_id = ?
+            AND location = ?""", (game_id, location))
+    if len(cur.fetchall()) > 0:
         return
     game_status['moves_left'] -= 1
     if game_status['moves_left'] == 0:
         game_status['to_move'] = 2 if game_status['to_move'] == 1 else 1
         game_status['moves_left'] = 2
-    db = get_db()
     db.execute("""INSERT INTO tokens
         (game_id, player, location)
         VALUES (?,?,?)""", (game_id, color, location))
