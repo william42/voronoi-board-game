@@ -2,3 +2,4 @@ board*.json
 board*.svg
 __pycache__
 *.db
+.venv
