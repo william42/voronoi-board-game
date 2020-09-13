@@ -19,8 +19,7 @@ Simply run
 The code in the `web` directory uses the Flask CLI.
 
 ```
-cd web
-export FLASK=voro.py
+source activate-venv.sh
 flask initdb # Creates the database, wiping out anything previously there.
 flask addboard board.json
 flask runws # Runs the WebSocket and HTTP server.
@@ -32,4 +31,4 @@ This is very much a work-in-progress.  In particular:
 
 * There's no login/account system.
 * The rules are unexplained.
-* The protocol is incredibly flimsy.
+* The protocol is incredibly flimsy, and probably vulnerable to cross-site hijacking.
