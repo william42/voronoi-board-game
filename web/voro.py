@@ -21,7 +21,10 @@ import numpy as np
 import io
 import json
 import os
+
 from unionfind import UnionFind
+import database
+import models
 
 #getting a lot of false positives on app.logger
 #pylint: disable=no-member
@@ -29,53 +32,39 @@ from unionfind import UnionFind
 app = Flask(__name__)
 app.config.update(dict(
     DATABASE=os.path.join(app.root_path,'voro.db'),
+    ALCHEMY_DATABASE='sqlite:///'+os.path.join(app.root_path,'voro.db'),
 ))
+app.logger.setLevel('INFO')
+db_session, engine = database.setup(app)
 
 sockets = Sockets(app)
 
-def get_db():
-    if 'db' not in g:
-        g.db = sqlite3.connect(app.config['DATABASE'])
-        g.db.row_factory = sqlite3.Row
-    return g.db
-
-
-def close_db():
-    db = g.pop('db', None)
-    if db is not None:
-        db.close()
-
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db_session.remove()
 
 @app.cli.command('initdb')
 def init_db():
-    db = get_db()
-    with app.open_resource('schema.sql', mode='r') as f:
-        db.cursor().executescript(f.read())
-    db.commit()
+    database.init(engine)
     app.logger.info('Database initialized.')
 
 @app.cli.command('addboard')
 @click.option('--name', type=str, default=None, help='Name to give the board')
 @click.argument('file', type=click.File('r'))
 def add_board(name, file):
-    board = json.load(file)
+    board_obj = json.load(file)
     if name is None:
         name = file.name
-    db = get_db()
-    db.execute("""INSERT INTO boards
-        (board_name, board_json)
-        VALUES (?,?)""", [name, json.dumps(board)])
-    db.commit()
+    new_board = models.Board(
+        board_name=name,
+        board_json=json.dumps(board_obj))
+    db_session.add(new_board)
+    db_session.commit()
     app.logger.info("Board added!")
 
 def layout_board(id):
-    db = get_db()
-    cursor = db.execute("""SELECT board_name, board_json
-        FROM boards
-        WHERE board_id=?
-        LIMIT 1""", [id])
-    board_info = cursor.fetchone()
-    board = json.loads(board_info['board_json'])
+    board_model = db_session.query(models.Board).filter_by(board_id=id).first()
+    board = json.loads(board_model.board_json)
     # with open('board.json', 'r') as f:
     #     board = json.load(f)
     trueboard = np.array(board['tokens'])
@@ -101,7 +90,7 @@ def layout_board(id):
     
     return {
         'board_id': id,
-        'board_name': board_info['board_name'],
+        'board_name': board_model.board_name,
         'edges': [edge(i, j) for (i, j) in edges],
         'cells': [cell(i) for i in range(len(trueboard))],
         'radius': min(np.linalg.norm(trueboard[i]-trueboard[j])
@@ -112,22 +101,6 @@ def layout_board(id):
 def view_board(id):
     board = layout_board(id)
     return render_template('board.html', **board)
-    
-def get_game_status(id):
-    db = get_db()
-    raw_status = db.execute("""SELECT game_status_json
-        FROM games
-        WHERE game_id=?""", (id,)).fetchone()['game_status_json']
-    return json.loads(raw_status)
-
-def set_game_status(id, status, commit=True):
-    db = get_db()
-    raw_status = json.dumps(status)
-    db.execute("""UPDATE games
-        SET game_status_json=?
-        WHERE game_id=?""", (raw_status,id))
-    if commit:
-        db.commit()
 
 @app.route('/games/new', methods=['POST'])
 def new_game():
@@ -137,43 +110,34 @@ def new_game():
         'to_move': 1,
         'moves_left': 1,
     })
-    db = get_db()
-    cur = db.execute("""INSERT INTO games
-        (game_name, board_id, game_status_json)
-        VALUES (?,?,?)""",
-        (game_name, board_id, default_status))
-    game_id = cur.lastrowid
-    db.commit()
-    return redirect(url_for('view_game',id=game_id))
+    new_game = models.Game(
+        game_name=game_name,
+        board_id=board_id,
+        game_status_json=default_status,
+    )
+    db_session.add(new_game)
+    db_session.commit()
+
+    return redirect(url_for('view_game',id=new_game.game_id))
 
 @app.route('/games/<int:id>')
 def view_game(id):
-    db = get_db()
-    cur = db.execute("""SELECT game_name, board_id, game_status_json
-        FROM games
-        WHERE game_id=?""",(id,))
-    game_info = cur.fetchone()
-    board_id = game_info['board_id']
+    game = db_session.query(models.Game).filter_by(game_id=id).first()
+    board_id = game.board_id
     board = layout_board(board_id)
-    board['game_name'] = game_info['game_name']
-    cur = db.execute("""SELECT location, player
-        FROM tokens
-        WHERE game_id=?""",(id,))
-    for row in cur:
-        location = int(row['location'])
-        player = int(row['player'])
+    board['game_name'] = game.game_name
+    for token in game.tokens:
+        location = token.location
+        player = token.player
         board['cells'][location]['color'] = player
     return render_template('game.html',
-        game_status_json=game_info['game_status_json'],
+        game_status_json=game.game_status_json,
         **board)
 
 @app.route('/')
 def home():
-    db = get_db()
-    boards = db.execute("""SELECT board_id, board_name
-        FROM boards""").fetchall()
-    games = db.execute("""SELECT game_id, game_name
-        FROM games""").fetchall()
+    boards = db_session.query(models.Board).all()
+    games = db_session.query(models.Game).all()
     return render_template('board_list.html', boards=boards, games=games)
 
 def broadcast(ws, game_id, message):
@@ -183,27 +147,17 @@ def broadcast(ws, game_id, message):
         if client.game_id != game_id: continue
         client.ws.send(json.dumps(message))
 
-def check_game(game_id, game_status):
-    db = get_db()
-
-    cur = db.execute("""SELECT b.board_json
-        FROM boards AS b
-        JOIN games AS g
-            ON b.board_id = g.board_id
-        WHERE g.game_id=?""", (game_id,))
-    board_info = cur.fetchone()
-    board = json.loads(board_info['board_json'])
+def check_game(game, game_status):
+    board_model = game.board
+    board = json.loads(board_model.board_json)
 
     num_cells = len(board['tokens'])
     edges = board['edges']
     num_border = board['num_border']
 
     cells = [None for i in range(num_cells)]
-    cur = db.execute("""SELECT location, player
-        FROM tokens
-        WHERE game_id=?""", (game_id,))
-    for row in cur:
-        cells[row['location']] = row['player']
+    for token in game.tokens:
+        cells[token.location] = token.player
     
     for i in range(num_border):
         if cells[i] is None:
@@ -244,25 +198,23 @@ def check_game(game_id, game_status):
     
 
 def play_token(ws, game_id, location, color):
-    db = get_db()
-    game_status = get_game_status(game_id)
+    game=db_session.query(models.Game).filter_by(game_id=game_id).first()
+
+    game_status = json.loads(game.game_status_json)
     if game_status['to_move'] != color:
         return
-    cur = db.execute("""SELECT 1 FROM tokens
-        WHERE game_id = ?
-            AND location = ?""", (game_id, location))
-    if len(cur.fetchall()) > 0:
+    query = db_session.query(models.Token)
+    query = query.filter_by(game_id=game_id).filter_by(location=location)
+    if query.count() > 0:
         return
     game_status['moves_left'] -= 1
     if game_status['moves_left'] == 0:
         game_status['to_move'] = 2 if game_status['to_move'] == 1 else 1
         game_status['moves_left'] = 2
-    db.execute("""INSERT INTO tokens
-        (game_id, player, location)
-        VALUES (?,?,?)""", (game_id, color, location))
-    check_game(game_id, game_status)
-    set_game_status(game_id, game_status, False)
-    db.commit()
+    game.tokens.append(models.Token(player=color, location=location))
+    check_game(game, game_status)
+    game.game_status_json=json.dumps(game_status)
+    db_session.commit()
     message = {
         'action': 'PLAY_TOKEN',
         'location': location,
@@ -306,6 +258,5 @@ def game_socket(ws, id):
 def run_ws(port):
     from gevent import pywsgi
     from geventwebsocket.handler import WebSocketHandler
-    app.logger.setLevel('INFO')
     server = pywsgi.WSGIServer(('', port), app, handler_class=WebSocketHandler)
     server.serve_forever()
