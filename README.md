@@ -12,7 +12,7 @@ Before using, you'll need the dependencies. (TODO: actually run through the code
 
 The code in the `builder` directory creates the actual game boards.
 
-Simply run
+After using `source activate-venv.sh` to create the virtualenv and install the package, use `vorobuilder [OPTIONS] output` to generate boards usable for `flask addboard` below.
 
 ### web
 
@@ -21,7 +21,7 @@ The code in the `web` directory uses the Flask CLI.
 ```
 source activate-venv.sh
 flask initdb # Creates the database, wiping out anything previously there.
-flask addboard board.json
+flask addboard "--name=My board" board.json
 flask runws # Runs the WebSocket and HTTP server.
 ```
 

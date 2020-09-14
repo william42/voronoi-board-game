@@ -11,20 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
-import os
-
-from web import models
-
-
-def setup(app):
-    database_url = app.config['ALCHEMY_DATABASE']
-    engine = create_engine(database_url)
-    db_session = scoped_session(sessionmaker(autocommit=False,autoflush=False,bind=engine))
-    models.Base.query = db_session.query_property()
-    return db_session, engine
-
-def init(engine):
-    models.Base.metadata.create_all(bind=engine)

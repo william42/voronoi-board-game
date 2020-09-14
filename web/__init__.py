@@ -12,19 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
-import os
+from flask import Flask
 
-from web import models
+app = Flask(__name__)
 
-
-def setup(app):
-    database_url = app.config['ALCHEMY_DATABASE']
-    engine = create_engine(database_url)
-    db_session = scoped_session(sessionmaker(autocommit=False,autoflush=False,bind=engine))
-    models.Base.query = db_session.query_property()
-    return db_session, engine
-
-def init(engine):
-    models.Base.metadata.create_all(bind=engine)
+import web.voro

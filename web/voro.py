@@ -22,14 +22,13 @@ import io
 import json
 import os
 
-from unionfind import UnionFind
-import database
-import models
+from web.unionfind import UnionFind
+from web import app, database, models
 
 #getting a lot of false positives on app.logger
 #pylint: disable=no-member
 
-app = Flask(__name__)
+# app = Flask(__name__)
 app.config.update(dict(
     DATABASE=os.path.join(app.root_path,'voro.db'),
     ALCHEMY_DATABASE='sqlite:///'+os.path.join(app.root_path,'voro.db'),

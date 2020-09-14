@@ -15,7 +15,7 @@
 
 import click
 import numpy as np
-import scipy.spatial as sp
+from scipy.spatial import Delaunay, Voronoi
 import math
 import datetime
 import json
@@ -37,7 +37,7 @@ def cvcirc(pts, n, r):
     circ = np.array([[math.cos(2*math.pi*i/n), math.sin(2*math.pi*i/n)]
                      for i in range(n)])
     pts_aug = np.concatenate([pts, circ * r])
-    vor = sp.Voronoi(pts_aug)
+    vor = Voronoi(pts_aug)
     return np.array(
         [centroid([vor.vertices[n] for n in region])
          for region in vor.regions
@@ -73,7 +73,7 @@ def circle(n):
 def build_board(border, interior, output):
     board = voroboard(interior, border, 800)
     trueboard = np.concatenate([circle(border) * 20, board])
-    delb = sp.Delaunay(trueboard)
+    delb = Delaunay(trueboard)
 
     ptr, indices = delb.vertex_neighbor_vertices
     edges = {(int(i), int(j)) for i in range(len(trueboard))

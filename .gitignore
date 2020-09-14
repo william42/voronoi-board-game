@@ -3,3 +3,4 @@ board*.svg
 __pycache__
 *.db
 .venv
+voronoi.egg-info
