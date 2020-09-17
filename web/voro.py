@@ -46,6 +46,13 @@ def shutdown_session(exception=None):
 def init_db():
     database.init(engine)
     app.logger.info('Database initialized.')
+    voro_root_path = os.path.dirname(app.root_path)
+    alembic_config_path = os.path.join(voro_root_path, 'alembic.ini')
+    app.logger.info('Alembic config: %s', alembic_config_path)
+    from alembic.config import Config
+    from alembic import command
+    alembic_config = Config(alembic_config_path)
+    command.stamp(alembic_config, "head")
 
 @app.cli.command('addboard')
 @click.option('--name', type=str, default=None, help='Name to give the board')
