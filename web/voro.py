@@ -31,10 +31,13 @@ from web import app, database, models
 #pylint: disable=no-member
 
 # app = Flask(__name__)
-app.config.update(dict(
-    DATABASE=os.path.join(app.root_path,'voro.db'),
-    ALCHEMY_DATABASE='sqlite:///'+os.path.join(app.root_path,'voro.db'),
-))
+
+app.config.from_object('web.default_settings')
+try:
+    app.config.from_envvar('VORO_SETTINGS')
+except RuntimeError as e:
+   app.logger.warning('Error in custom configuration: %s', e) 
+
 app.logger.setLevel('INFO')
 db_session, engine = database.setup(app)
 
