@@ -1,9 +1,5 @@
-<!DOCTYPE html>
-<head>
-    <title>Voronova!</title>
-</head>
-<body>
-    <h1>Voronova!</h1>
+{% extends "base.html" %}
+{% block content %}
     <h2>Voronova games:</h2>
     <ul>
         {% for game in games %}
@@ -20,4 +16,4 @@
             </li>
         {% endfor %}
     </ul>
-</body>
+{% endblock %}

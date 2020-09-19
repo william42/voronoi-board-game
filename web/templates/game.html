@@ -1,11 +1,14 @@
-<!DOCTYPE html>
-<head>
-    <title>Voronova!</title>
-    <link rel="stylesheet" href="/static/game.css">
-</head>
-<body>
-    <h1>Voronova game {{game_name}}</h1>
+{% extends "base.html" %}
 
+{% block title %} Voronova game {{game_name}} {% endblock %}
+{% block title2 %} Voronova game {{game_name}} {% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <link rel="stylesheet" href="/static/game.css">
+{% endblock %}
+
+{% block content %}
     <div style="height: 500px; width: 500px;" id="board-holder">
         <svg viewBox="0 0 44 44">
             {% for edge in edges %}
@@ -54,9 +57,11 @@
     <div id="websocket-closed" class="voro-hide">
         WebSocket connection has closed! Refresh to regain synchronization.
     </div>
+{% endblock %}
 
+{% block after %}
     <script src="/static/game.js"></script>
     <script lang="text/javascript">
         set_status({{ game_status_json|safe }});
     </script>
-</body>
+{% endblock %}

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        {% block head %}
+            <title>{% block title %}Voronova!{% endblock %}</title>
+            <link rel="stylesheet" href="/static/base.css">
+        {% endblock %}
+    </head>
+    <body>
+        <div id="header">
+            {% block header %}
+                <h1>{% block title2 %}Voronova!{% endblock %}</h1>
+                TODO: login
+            {% endblock %}
+        </div>
+        <div id="content">
+            {% block content %}{% endblock %}
+        </div>
+        <div id="footer">
+            {% block footer %}
+                © 2020 Google LLC (not an official Google product)
+            {% endblock %}
+        </div>
+        {% block after %}
+        {% endblock %}
+    </body>
+</html>
