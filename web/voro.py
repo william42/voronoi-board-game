@@ -22,6 +22,7 @@ import numpy as np
 import io
 import json
 import os
+from functools import wraps
 
 from web.unionfind import UnionFind
 from web import app, database, models
@@ -69,6 +70,18 @@ def add_board(name, file):
     db_session.commit()
     app.logger.info("Board added!")
 
+def uses_template(template=None):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            template_name = template
+            if template_name is None:
+                template_name = f.__name__ + '.html'
+            ctx = f(*args, **kwargs) or {}
+            return render_template(template_name, **ctx)
+        return decorated_function
+    return decorator
+
 def layout_board(id):
     board_model = db_session.query(models.Board).filter_by(board_id=id).first()
     board = json.loads(board_model.board_json)
@@ -105,9 +118,10 @@ def layout_board(id):
     }
 
 @app.route('/boards/<id>')
+@uses_template('board.html')
 def view_board(id):
     board = layout_board(id)
-    return render_template('board.html', **board)
+    return board
 
 @app.route('/games/new', methods=['POST'])
 def new_game():
@@ -137,6 +151,7 @@ def set_status_js(json):
     return jinja2.Markup(result)
 
 @app.route('/games/<int:id>')
+@uses_template('game.html')
 def view_game(id):
     game = db_session.query(models.Game).filter_by(game_id=id).first()
     board_id = game.board_id
@@ -146,15 +161,16 @@ def view_game(id):
         location = token.location
         player = token.player
         board['cells'][location]['color'] = player
-    return render_template('game.html',
+    return dict(
         game_status_json=game.game_status_json,
         **board)
 
 @app.route('/')
+@uses_template('board_list.html')
 def home():
     boards = db_session.query(models.Board).all()
     games = db_session.query(models.Game).all()
-    return render_template('board_list.html', boards=boards, games=games)
+    return dict(boards=boards, games=games)
 
 def broadcast(ws, game_id, message):
     # TODO: understand this, maybe use something less hacky?
