@@ -61,7 +61,5 @@
 
 {% block after %}
     <script src="/static/game.js"></script>
-    <script lang="text/javascript">
-        set_status({{ game_status_json|safe }});
-    </script>
+    {{ game_status_json|set_status_js }}
 {% endblock %}

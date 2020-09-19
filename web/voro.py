@@ -16,6 +16,7 @@ import sqlite3
 import flask
 from flask import Flask, render_template, g, request, redirect, url_for
 from flask_sockets import Sockets
+import jinja2
 import click
 import numpy as np
 import io
@@ -125,6 +126,15 @@ def new_game():
     db_session.commit()
 
     return redirect(url_for('view_game',id=new_game.game_id))
+
+@app.template_filter('set_status_js')
+def set_status_js(json):
+    result = '<script lang="text/javascript">'
+    result += 'set_status('
+    result += json
+    result += ')'
+    result += '</script>'
+    return jinja2.Markup(result)
 
 @app.route('/games/<int:id>')
 def view_game(id):
