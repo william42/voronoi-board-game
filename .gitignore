@@ -4,3 +4,4 @@ __pycache__
 *.db
 .venv
 voronoi.egg-info
+config.py
