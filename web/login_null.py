@@ -13,12 +13,22 @@
 # limitations under the License.
 
 from flask import Blueprint, render_template, redirect, url_for, request, session, current_app, g
+import jinja2
 
 from web import models
 from web.database import db_session
 
 blueprint = Blueprint('login_null', __name__,
                       template_folder='templates')
+
+@blueprint.app_template_global('login_row')
+def login_row():
+    current_app.logger.info('session: %s', session)
+    if 'user_id' in session:
+        user = db_session.query(models.User).filter_by(user_id=session['user_id']).first()
+    else:
+        user = None
+    return jinja2.Markup(render_template('login_row_null.html', user=user))
 
 @blueprint.route('/login', methods=['POST','GET'])
 def login():
@@ -47,4 +57,11 @@ def signup():
     new_user = models.User(username=username)
     db_session.add(new_user)
     db_session.commit()
+    return redirect(url_for('login_null.login'))
+
+@blueprint.route('/logout', methods=['POST'])
+def logout():
+    if 'user_id' not in session:
+        return 'Not logged in'
+    del session['user_id']
     return redirect(url_for('login_null.login'))

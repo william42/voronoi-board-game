@@ -10,8 +10,8 @@
         <div id="header">
             {% block header %}
                 <h1>{% block title2 %}Voronova!{% endblock %}</h1>
-                TODO: login
             {% endblock %}
+            {{ login_row() }}
         </div>
         <div id="content">
             {% block content %}{% endblock %}

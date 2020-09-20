@@ -275,12 +275,4 @@ def game_socket(ws, id):
             current_app.logger.warning('Raw message was: %s', raw_message)
     current_app.logger.info('Closing socket...')
 
-@app.cli.command('runws')
-@click.option('--port', default=5000, help='Port to run websocket/HTTP server on.')
-def run_ws(port):
-    from gevent import pywsgi
-    from geventwebsocket.handler import WebSocketHandler
-    current_sockets = Sockets(app)
-    current_sockets.register_blueprint(sockets)
-    server = pywsgi.WSGIServer(('', port), current_app, handler_class=WebSocketHandler)
-    server.serve_forever()
+

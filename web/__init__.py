@@ -39,4 +39,14 @@ def create_app():
 
     app.logger.setLevel('INFO')
 
+    @app.cli.command('runws')
+    @click.option('--port', default=5000, help='Port to run websocket/HTTP server on.')
+    def run_ws(port):
+        from gevent import pywsgi
+        from geventwebsocket.handler import WebSocketHandler
+        current_sockets = Sockets(app)
+        current_sockets.register_blueprint(voro_sockets)
+        server = pywsgi.WSGIServer(('', port), app, handler_class=WebSocketHandler)
+        server.serve_forever()
+
     return app
