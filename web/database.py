@@ -15,16 +15,24 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 import os
+from flask import current_app, g
+from werkzeug.local import LocalProxy
 
 from web import models
 
 
-def setup(app):
-    database_url = app.config['ALCHEMY_DATABASE']
-    engine = create_engine(database_url)
-    db_session = scoped_session(sessionmaker(autocommit=False,autoflush=False,bind=engine))
-    models.Base.query = db_session.query_property()
-    return db_session, engine
+def setup():
+    database_url = current_app.config['ALCHEMY_DATABASE']
+    g.engine = create_engine(database_url)
+    g.db_session = sessionmaker(autocommit=False,autoflush=False,bind=g.engine)()
+    # models.Base.query = g.db_session.query_property()
+
+def get_db_session():
+    if 'db_session' not in g:
+        setup()
+    return g.db_session
+
+db_session = LocalProxy(get_db_session)
 
 def init(engine):
     models.Base.metadata.create_all(bind=engine)

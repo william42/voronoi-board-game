@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div>
+        {% if user %}
+        Currently logged in as: {{user.username}} ({{user.user_id}})
+        {% else %}
+        Currently not logged in.
+        {% endif %}
+    </div>
+    <div>
+        <form method="post">
+            <input 
+            type="text" 
+            name="username" 
+            id="username"
+            value="{{username}}">
+            <input type="submit" value="Login!">
+        </form>
+    </div>
+    <div>
+        <form action="/signup" method="post">
+            <input 
+            type="text" 
+            name="username" 
+            id="username"
+            value="">
+            <input type="submit" value="Sign up!">
+        </form>
+    </div>
+    
+{% endblock %}

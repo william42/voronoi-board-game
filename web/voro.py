@@ -14,7 +14,7 @@
 
 import sqlite3
 import flask
-from flask import Flask, render_template, g, request, redirect, url_for
+from flask import Flask, Blueprint, render_template, g, request, redirect, url_for, session, current_app
 from flask_sockets import Sockets
 import jinja2
 import click
@@ -25,35 +25,22 @@ import os
 from functools import wraps
 
 from web.unionfind import UnionFind
-from web import app, database, models
+from web import database, models
+from web.database import db_session
 
-#getting a lot of false positives on app.logger
+#getting a lot of false positives on current_app.logger
 #pylint: disable=no-member
 
-# app = Flask(__name__)
-
-app.config.from_object('web.default_settings')
-try:
-    app.config.from_envvar('VORO_SETTINGS')
-except RuntimeError as e:
-   app.logger.warning('Error in custom configuration: %s', e) 
-
-app.logger.setLevel('INFO')
-db_session, engine = database.setup(app)
-
-sockets = Sockets(app)
-
-@app.teardown_appcontext
-def shutdown_session(exception=None):
-    db_session.remove()
+app = Blueprint('voro', __name__, cli_group=None)
+sockets = Blueprint('ws', __name__)
 
 @app.cli.command('initdb')
 def init_db():
-    database.init(engine)
-    app.logger.info('Database initialized.')
-    voro_root_path = os.path.dirname(app.root_path)
+    database.init(g.engine)
+    current_app.logger.info('Database initialized.')
+    voro_root_path = os.path.dirname(current_app.root_path)
     alembic_config_path = os.path.join(voro_root_path, 'alembic.ini')
-    app.logger.info('Alembic config: %s', alembic_config_path)
+    current_app.logger.info('Alembic config: %s', alembic_config_path)
     from alembic.config import Config
     from alembic import command
     alembic_config = Config(alembic_config_path)
@@ -71,7 +58,7 @@ def add_board(name, file):
         board_json=json.dumps(board_obj))
     db_session.add(new_board)
     db_session.commit()
-    app.logger.info("Board added!")
+    current_app.logger.info("Board added!")
 
 def uses_template(template=None):
     def decorator(f):
@@ -142,9 +129,9 @@ def new_game():
     db_session.add(new_game)
     db_session.commit()
 
-    return redirect(url_for('view_game',id=new_game.game_id))
+    return redirect(url_for('voro.view_game',id=new_game.game_id))
 
-@app.template_filter('set_status_js')
+@app.app_template_filter('set_status_js')
 def set_status_js(json):
     result = '<script lang="text/javascript">'
     result += 'set_status('
@@ -196,10 +183,10 @@ def check_game(game, game_status):
     
     for i in range(num_border):
         if cells[i] is None:
-            app.logger.info('Border not full')
+            current_app.logger.info('Border not full')
             game_status['border_full'] = False
             return
-    app.logger.info('Border full.')
+    current_app.logger.info('Border full.')
     game_status['border_full'] = True
     uf = UnionFind(num_cells)
     for i in range(num_border):
@@ -228,7 +215,7 @@ def check_game(game, game_status):
         else:
             scores[1 - player] += 1
     game_status['score_1'], game_status['score_2'] = scores
-    app.logger.info('Score: %s', scores)
+    current_app.logger.info('Score: %s', scores)
 
     
 
@@ -268,12 +255,13 @@ def game_socket(ws, id):
     server = ws.handler.server
     client = server.clients[client_address]
     client.game_id = id
-    app.logger.info('Opening socket at %s for game %d', client_address, id)
+    current_app.logger.info('Opening socket at %s for game %d', client_address, id)
+    current_app.logger.info('Session: %s', session)
     while not ws.closed:
         try:
             raw_message = ws.receive()
             if raw_message is None:
-                app.logger.info('None message received and ignored...')
+                current_app.logger.info('None message received and ignored...')
                 continue
             message = json.loads(raw_message)
             if message['action'] == 'PLAY_TOKEN':
@@ -281,17 +269,18 @@ def game_socket(ws, id):
                 color = int(message['color'])
                 play_token(ws, id, location, color)
             else:
-                app.logger.warning('Unknown message %s', message)
+                current_app.logger.warning('Unknown message %s', message)
         except Exception as e:
-            app.logger.exception('Error in websocket', e)
-            app.logger.warning('Raw message was: %s', raw_message)
-    app.logger.info('Closing socket...')
-        
+            current_app.logger.exception('Error in websocket', e)
+            current_app.logger.warning('Raw message was: %s', raw_message)
+    current_app.logger.info('Closing socket...')
 
 @app.cli.command('runws')
 @click.option('--port', default=5000, help='Port to run websocket/HTTP server on.')
 def run_ws(port):
     from gevent import pywsgi
     from geventwebsocket.handler import WebSocketHandler
-    server = pywsgi.WSGIServer(('', port), app, handler_class=WebSocketHandler)
+    current_sockets = Sockets(app)
+    current_sockets.register_blueprint(sockets)
+    server = pywsgi.WSGIServer(('', port), current_app, handler_class=WebSocketHandler)
     server.serve_forever()

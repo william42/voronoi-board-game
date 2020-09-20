@@ -51,3 +51,10 @@ class Token(Base):
     game=relationship("Game", back_populates="tokens")
 
 Game.tokens=relationship("Token", order_by=Token.location, back_populates='game')
+
+class User(Base):
+    __tablename__ = 'users'
+
+    user_id=Column(Integer, primary_key=True)
+    username=Column(String)
+    user_extra_data_json=Column(String)

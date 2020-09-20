@@ -12,8 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from flask import Flask
+from flask import Flask, g
+from flask_sockets import Sockets
+import click
 
-app = Flask(__name__)
+from web import database
+from web.voro import app as blueprint
+from web.voro import sockets as voro_sockets
 
-import web.voro
+def create_app():
+    app = Flask(__name__)
+
+    app.config.from_object('web.default_settings')
+    try:
+        app.config.from_envvar('VORO_SETTINGS')
+    except RuntimeError as e:
+        app.logger.warning('Error in custom configuration: %s', e) 
+
+    app.register_blueprint(blueprint, cli_group=None)
+
+    if 'LOGIN_SYSTEM' not in app.config:
+        # TODO: decide on whether to do a default login system
+        raise RuntimeError('LOGIN_SYSTEM not defined.')
+    else:
+        app.register_blueprint(app.config['LOGIN_SYSTEM'])
+
+    app.logger.setLevel('INFO')
+
+    return app

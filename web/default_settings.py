@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import os
-from web import app
 
-DATABASE=os.path.join(app.root_path,'voro.db')
-ALCHEMY_DATABASE='sqlite:///'+os.path.join(app.root_path,'voro.db')
+DATABASE=os.path.join('web','voro.db')
+ALCHEMY_DATABASE='sqlite:///'+os.path.join('web','voro.db')
