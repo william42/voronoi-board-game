@@ -13,12 +13,19 @@
 # limitations under the License.
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, MetaData
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-
-Base = declarative_base()
+# for Alembic
+meta = MetaData(naming_convention={
+        "ix": "ix_%(column_0_label)s",
+        "uq": "uq_%(table_name)s_%(column_0_name)s",
+        "ck": "ck_%(table_name)s_%(constraint_name)s",
+        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+        "pk": "pk_%(table_name)s"
+      })
+Base = declarative_base(metadata=meta)
 
 class Board(Base):
     __tablename__ = 'boards'
@@ -34,9 +41,13 @@ class Game(Base):
     game_name=Column(String)
     board_id=Column(Integer, ForeignKey('boards.board_id'))
     game_status_json=Column(String)
+    player1_id=Column(Integer, ForeignKey('users.user_id'))
+    player2_id=Column(Integer, ForeignKey('users.user_id'))
 
     board=relationship("Board", back_populates="games")
-
+    player1=relationship("User", foreign_keys=[player1_id])
+    player2=relationship("User", foreign_keys=[player2_id])
+    
 Board.games=relationship("Game", order_by=Game.game_id, back_populates="board")
 
 class Token(Base):
