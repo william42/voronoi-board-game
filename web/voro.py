@@ -36,6 +36,7 @@ sockets = Blueprint('ws', __name__)
 
 @app.cli.command('initdb')
 def init_db():
+    database.setup()
     database.init(g.engine)
     current_app.logger.info('Database initialized.')
     voro_root_path = os.path.dirname(current_app.root_path)
