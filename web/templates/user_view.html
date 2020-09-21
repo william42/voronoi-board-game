@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title2 %}{% if user %}User {{ user.username }}{% else %}Error{% endif %}{% endblock %}
+{% block content %}
+{% if user %}
+<div>User ID: {{user.user_id}}</div>
+<div>
+    <h3>Challenge user:</h3>
+    <form action="/games/new" method="post">
+        <input type="hidden" name="opponent_id" value="{{user.user_id}}">
+        <select name="board_id" id="board_id">
+            {% for board in boards %}
+                <option value="{{ board.board_id }}">
+                    {{ board.board_name }}
+                </option>
+            {% endfor %}
+        </select>
+        <input type="submit" value="Challenge!">
+    </form>
+</div>
+{% else %}
+Error: user not found
+{% endif %}
+{% endblock %}

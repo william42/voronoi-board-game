@@ -116,8 +116,22 @@ def view_board(id):
 
 @app.route('/games/new', methods=['POST'])
 def new_game():
-    game_name = request.form['game_name']
+    if 'user_id' not in session:
+        #TODO: better interface
+        return 'Log in to challenge opponent'
+    user_id = session['user_id']
+    user = db_session.query(models.User).filter_by(user_id=user_id).first()
+    game_name = request.form.get('game_name', None)
     board_id = int(request.form['board_id'])
+    opponent_id = int(request.form['opponent_id'])
+    opponent = db_session.query(models.User).filter_by(user_id=opponent_id).first()
+
+    if user is None or opponent is None:
+        return 'Error in user info'
+
+    if game_name is None:
+        game_name = user.username + ' vs ' + opponent.username
+
     default_status = json.dumps({
         'to_move': 1,
         'moves_left': 1,
@@ -126,6 +140,8 @@ def new_game():
         game_name=game_name,
         board_id=board_id,
         game_status_json=default_status,
+        player1=user,
+        player2=opponent,
     )
     db_session.add(new_game)
     db_session.commit()
@@ -156,12 +172,17 @@ def view_game(id):
         game_status_json=game.game_status_json,
         **board)
 
-@app.route('/')
+@app.route('/boards')
 @uses_template('board_list.html')
-def home():
+def board_list():
     boards = db_session.query(models.Board).all()
     games = db_session.query(models.Game).all()
     return dict(boards=boards, games=games)
+
+@app.route('/')
+@uses_template()
+def home():
+    return None
 
 def broadcast(ws, game_id, message):
     # TODO: understand this, maybe use something less hacky?
@@ -218,18 +239,23 @@ def check_game(game, game_status):
     game_status['score_1'], game_status['score_2'] = scores
     current_app.logger.info('Score: %s', scores)
 
-    
+def current_user(game, color):
+    return game.player1 if color==1 else game.player2
 
-def play_token(ws, game_id, location, color):
+def play_token(ws, user, game_id, location, color):
     game=db_session.query(models.Game).filter_by(game_id=game_id).first()
 
     game_status = json.loads(game.game_status_json)
     if game_status['to_move'] != color:
         return
+    if user is not current_user(game, color):
+        return
+    
     query = db_session.query(models.Token)
     query = query.filter_by(game_id=game_id).filter_by(location=location)
     if query.count() > 0:
         return
+    
     game_status['moves_left'] -= 1
     if game_status['moves_left'] == 0:
         game_status['to_move'] = 2 if game_status['to_move'] == 1 else 1
@@ -258,6 +284,12 @@ def game_socket(ws, id):
     client.game_id = id
     current_app.logger.info('Opening socket at %s for game %d', client_address, id)
     current_app.logger.info('Session: %s', session)
+    if 'user_id' in session:
+        user = (db_session.query(models.User)
+        .filter_by(user_id=session['user_id'])
+        .first())
+    else:
+        user = None
     while not ws.closed:
         try:
             raw_message = ws.receive()
@@ -268,7 +300,7 @@ def game_socket(ws, id):
             if message['action'] == 'PLAY_TOKEN':
                 location = int(message['location'])
                 color = int(message['color'])
-                play_token(ws, id, location, color)
+                play_token(ws, user, id, location, color)
             else:
                 current_app.logger.warning('Unknown message %s', message)
         except Exception as e:
@@ -276,4 +308,16 @@ def game_socket(ws, id):
             current_app.logger.warning('Raw message was: %s', raw_message)
     current_app.logger.info('Closing socket...')
 
+@app.route('/users')
+@uses_template()
+def user_list():
+    users = db_session.query(models.User).all()
+    return dict(users=users)
 
+@app.route('/users/<id>')
+@uses_template()
+def user_view(id):
+    user = db_session.query(models.User).filter_by(user_id=id).first()
+    #TODO: current games
+    boards = db_session.query(models.Board).all()
+    return dict(user=user, boards=boards)
