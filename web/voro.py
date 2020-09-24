@@ -233,7 +233,8 @@ def check_game(game, game_status):
     for cell, weight in uf.positive_weight_groups():
         player = 0 if cells[cell] == 1 else 1
         if weight > 1:
-            scores[player] += weight - 4
+            scores[player] += weight
+            scores[1 - player] += 4
         else:
             scores[1 - player] += 1
     game_status['score_1'], game_status['score_2'] = scores
