@@ -54,7 +54,7 @@ def signup():
     username = request.form['username']
     if db_session.query(models.User).filter_by(username=username).count() > 0:
         return 'User already exists'
-    new_user = models.User(username=username)
+    new_user = models.User(username=username, display_name=username)
     db_session.add(new_user)
     db_session.commit()
     return redirect(url_for('login_null.login'))

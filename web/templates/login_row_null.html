@@ -1,5 +1,5 @@
 {% if user %}
-<div>Logged in as {{ user.username }} ({{ user.user_id }}). <a href="/login">Change Login</a></div>
+<div>Logged in as {{ user.display_name }} ({{ user.user_id }}). <a href="/login">Change Login</a></div>
 {% else %}
 <div><a href="/login">Login</a></div>
 {% endif %}

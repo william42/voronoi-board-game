@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title2 %}{% if user %}User {{ user.username }}{% else %}Error{% endif %}{% endblock %}
+{% block title2 %}{% if user %}User {{ user.display_name }}{% else %}Error{% endif %}{% endblock %}
 {% block content %}
 {% if user %}
 <div>User ID: {{user.user_id}}</div>

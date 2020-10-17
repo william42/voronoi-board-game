@@ -130,7 +130,7 @@ def new_game():
         return 'Error in user info'
 
     if game_name is None:
-        game_name = user.username + ' vs ' + opponent.username
+        game_name = user.display_name + ' vs ' + opponent.display_name
 
     default_status = json.dumps({
         'to_move': 1,

@@ -68,4 +68,5 @@ class User(Base):
 
     user_id=Column(Integer, primary_key=True)
     username=Column(String)
+    display_name=Column(String)
     user_extra_data_json=Column(String)
